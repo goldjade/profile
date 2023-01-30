@@ -1,3 +1,5 @@
+/** @format */
+
 header {
   width: 100%;
   background-color: #222;
@@ -30,6 +32,38 @@ header {
           font-size: 14px;
           color: #fff;
         }
+      }
+    }
+    .fa-Bars {
+      position: absolute;
+      right: 30px;
+      bottom: 20px;
+      font-size: 24;
+      color: #fff;
+      display: none;
+    }
+  }
+  &.main {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 9;
+    background: transparent;
+  }
+}
+//tablet
+@media screen and (max-width: $tablet) {
+  header {
+    .inner {
+      width: 100%;
+      h1 {
+        left: 30px;
+      }
+      #gnb {
+        display: none;
+      }
+      .fa-Bars {
+        display: block;
       }
     }
   }
