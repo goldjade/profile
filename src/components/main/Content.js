@@ -1,9 +1,9 @@
-import React from 'react'
+/** @format */
+
+import React from 'react';
 
 const Content = () => {
-  return (
-    <div>Content</div>
-  )
-}
+  return <main>Content</main>;
+};
 
-export default Content
+export default Content;
