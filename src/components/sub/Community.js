@@ -1,9 +1,10 @@
-import React from 'react'
+/** @format */
+
+import React from 'react';
+import LayOut from '../common/LayOut';
 
 const Community = () => {
-  return (
-    <div>Community</div>
-  )
-}
+  return <LayOut title={"Community"}>Community</LayOut>;
+};
 
-export default Community
+export default Community;

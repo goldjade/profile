@@ -1,9 +1,10 @@
-import React from 'react'
+/** @format */
+
+import React from 'react';
+import LayOut from '../common/LayOut';
 
 const Department = () => {
-  return (
-    <div>Department</div>
-  )
-}
+  return <LayOut title={"Department"}>Department</LayOut>;
+};
 
-export default Department
+export default Department;

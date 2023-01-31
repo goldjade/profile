@@ -1,7 +1,10 @@
-import React from "react";
+/** @format */
+
+import React from 'react';
+import LayOut from '../common/LayOut';
 
 const Youtube = () => {
-  return <div>Youtube</div>;
+  return <LayOut title={'Youtube'}>Youtube</LayOut>;
 };
 
 export default Youtube;
