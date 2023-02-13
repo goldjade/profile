@@ -2,59 +2,71 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import LayOut from '../common/LayOut';
-import { CommunityCard } from './CommunityCard';
-// 01 useForm import
-// https://react-hook-form.com/                   npm install react-hook-form
-// https://github.com/jquense/yup/tree/pre-v1     npm install -S yup
-// npm install @hookform/resolvers    hook-form이랑 yup을 연결해주는 라이브러리
+import CommunityCard from './CommunityCard';
+
+// https://react-hook-form.com/
+// npm install react-hook-form
+// https://github.com/jquense/yup/tree/pre-v1
+// npm install -S yup
+// npm install @hookform/resolvers
+
+// 01. useForm import
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 
-//02 form 요소의 항목별 에러체크 정의
+// 02. form 요소의 항목별 에러 체크 정의
 const schema = yup.object({
-  title: yup.string().trim().required('제목을 입력해주세요'),
-  content: yup.string().trim().required('내용을 입력해주세요'),
+  title: yup.string().trim().required('제목을 입력해주세요.'),
+  content: yup.string().trim().required('내용을 입력해주세요.'),
+  timestamp: yup.string().required('날짜를 선택해 주세요'),
 });
 
 const Community = () => {
-  //03. useForm 생성
-  //register 각각의 form의 name의 내용을 생성한다.
-  // handleSubmit : form에서  onSubmit 할때 실행됨
-  //reset : form에서 reset 할때 실행
-  // formState:{errors}  yup 에러 출력 활용
+  // 03. useForm 생성
+  // register : 각각의 form 의 name 을 설정
+  // handleSubmit : form 에서 onSubmit 할때 실행됨
+  // reset : form 에서 reset 할때 실행
+  // formState: { errors }  yup 에러 출력 활용
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors },
   } = useForm({
-    resolver: yupResolver(schema), //yup과 연결시켜줌
-    mode: 'onChange', // mode가 onchange면 실행하라
+    resolver: yupResolver(schema), // yup 과 연결 시켜줌.
+    mode: 'onChange', // mode 가 onChange 면 실행하라..
   });
 
-  // 데모용 데이터 생
-  const initPost = [
-    { title: 'Hello 1', content: 'Welocome To React!' },
-    { title: 'Hello 2', content: 'Welocome To React!' },
-    { title: 'Hello 3', content: 'Welocome To React!' },
-    { title: 'Hello 4', content: 'Welocome To React!' },
-    { title: 'Hello 5', content: 'Welocome To React!' },
-  ];
-  const [posts, setPosts] = useState(initPost);
+  // 데모용 데이터 생성
+  // const initPost = [
+  //   { title: 'Hello 1', content: 'Welocome To React!' },
+  //   { title: 'Hello 2', content: 'Welocome To React!' },
+  //   { title: 'Hello 3', content: 'Welocome To React!' },
+  //   { title: 'Hello 4', content: 'Welocome To React!' },
+  //   { title: 'Hello 5', content: 'Welocome To React!' },
+  // ];
 
-  const inputEdit = useRef(null);
-  const textareaEdit = useRef(null);
+  // 로컬에 저장된 내용을 가지고 온다.
+  const getLocalPost = () => {
+    const data = localStorage.getItem('post');
+    if (data === null) {
+      return [];
+    } else {
+      return JSON.parse(data);
+    }
+  };
+  const [posts, setPosts] = useState(getLocalPost());
+
   const [Allowed, setAllowed] = useState(true);
-
   const createPost = (data) => {
-    //data === {title:title , content:content}
+    // data ======>  { title: title, content: conten}
     setPosts([...posts, data]);
     // ...register("title")
-    // ...register("content")
+    // ...register("conente")
     reset();
-    setAllowed((prev) => true);
 
+    setAllowed((prev) => true);
     setPosts((prev) => {
       const arr = [...prev];
       const updateArr = arr.map((item, index) => {
@@ -76,7 +88,6 @@ const Community = () => {
   const enableUpdate = (idx) => {
     if (!Allowed) return;
     setAllowed(false);
-
     setPosts(
       posts.map((item, index) => {
         if (idx === index) {
@@ -86,9 +97,9 @@ const Community = () => {
       })
     );
   };
+  // 업데이트 취소
   const disapleUpdate = (idx) => {
     setAllowed(true);
-
     setPosts(
       posts.map((item, index) => {
         if (index === idx) {
@@ -99,35 +110,30 @@ const Community = () => {
     );
   };
   // 게시물 업데이트
-  const updatePost = (idx) => {
-    // 빈문자열 체크 ""
-    if (!inputEdit.current.value.trim() || !textareaEdit.current.value.trim()) {
-      inputEdit.current.value = '';
-      textareaEdit.current.value = '';
-      return alert('수정할 제목과 내용을 입력해주세요.');
-    }
+  const updatePost = (data) => {
     setPosts(
       posts.map((item, index) => {
-        if (idx === index) {
-          item.title = inputEdit.current.value;
-          item.content = textareaEdit.current.value;
+        // 숫자로 변경하여서 비교
+        if (parseInt(data.index) === index) {
+          item.title = data.title;
+          item.content = data.content;
+          item.timestamp = data.timestamp;
           item.enableUpdate = false;
         }
         return item;
       })
     );
 
-    // 업데이트 가능하도록
     setAllowed(true);
   };
-  // 디버깅
+  // 로컬에 저장
   useEffect(() => {
-    console.log(posts);
+    localStorage.setItem('post', JSON.stringify(posts));
   }, [posts]);
-
   return (
     <LayOut title={'Community'}>
       {/* 입력폼 */}
+
       <div className="inputBox">
         <form onSubmit={handleSubmit(createPost)}>
           <input
@@ -144,6 +150,10 @@ const Community = () => {
             {...register('content')}
           ></textarea>
           <span className="err">{errors.content?.message}</span>
+          <br />
+          <input type="date" {...register('timestamp')} />
+          <span className="err">{errors.timestamp?.message}</span>
+          <br />
           <div className="btnSet">
             {/* form 안쪽에 버튼은 type 을 정의한다. */}
             <button type="reset">CANCEL</button>
@@ -153,28 +163,19 @@ const Community = () => {
       </div>
       {/* 리스트 출력 */}
       <div className="showBox">
-        {/* 목록을 출력할 땐 map(), 그리고 key */}
-        {
-          // posts.map((item, index) =>  (JSX) );
-          posts.map((item, index) => {
-            // uuid : https://www.npmjs.com/package/uuid
-            // 중복되지않는 key 를 만들어주는 라이브러리
-            // 그러나 기본은 가능하면 본인이 key를 관리
-            return (
-              <CommunityCard
-                key={index}
-                item={item}
-                inputEdit={inputEdit}
-                textareaEdit={textareaEdit}
-                index={index}
-                disapleUpdate={disapleUpdate}
-                updatePost={updatePost}
-                enableUpdate={enableUpdate}
-                deletePost={deletePost}
-              />
-            );
-          })
-        }
+        {posts.map((item, index) => {
+          return (
+            <CommunityCard
+              key={index}
+              item={item}
+              disapleUpdate={disapleUpdate}
+              updatePost={updatePost}
+              enableUpdate={enableUpdate}
+              deletePost={deletePost}
+              index={index}
+            />
+          );
+        })}
       </div>
     </LayOut>
   );
