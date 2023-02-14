@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import LayOut from '../common/LayOut';
 import CommunityCard from './CommunityCard';
+// import axios
 
 // https://react-hook-form.com/
 // npm install react-hook-form
@@ -130,6 +131,41 @@ const Community = () => {
   useEffect(() => {
     localStorage.setItem('post', JSON.stringify(posts));
   }, [posts]);
+  // 이미지 업로드 및 미리보기
+  const [imgFile, setImgFile] = useState('');
+  const imgRef = useRef(null);
+
+  const onChangeImg = async (e) => {
+    e.preventDefault();
+    // 미리보기 기능
+    if (e.target.files) {
+      // files 는 배열에 담긴다
+      // files는 1개 이므로 e.target.files[0]
+      const uploadFile = e.target.files[0];
+      console.log(uploadFile);
+      // 이미지를 읽어들이는 바닐라 메서드(함수)
+      const reader = new FileReader();
+      reader.readAsDataURL(uploadFile);
+      reader.onloadend = () => {
+        // 임시 이미지 주소가 만들어진다.
+        // useState
+        setImgFile(reader.result);
+      };
+
+      // 서버로 이미지를 임시로 보내고 url 글자를 받아오는 코드 / 일반적인 방법
+      // 파일을 강제로 업로드 한다.
+      // const formData = new FormData();
+      // formData.append('files', uploadFile);
+      // await axios({
+      //   method: 'post',
+      //   url: '/api/files/images',
+      //   data: formData,
+      //   headers: {
+      //     'Content-Type': 'multipart/form-data',
+      //   },
+      // });
+    }
+  };
   return (
     <LayOut title={'Community'}>
       {/* 입력폼 */}
@@ -154,6 +190,16 @@ const Community = () => {
           <input type="date" {...register('timestamp')} />
           <span className="err">{errors.timestamp?.message}</span>
           <br />
+          {/* 이미지 업로드 하기 : 이미지 미리보기 연동 */}
+          <div>
+            <img src={imgFile} alt="프로필 이미지" />
+            <input
+              type="file"
+              accept="image/*"
+              onInput={onChangeImg}
+              ref={imgRef}
+            ></input>
+          </div>
           <div className="btnSet">
             {/* form 안쪽에 버튼은 type 을 정의한다. */}
             <button type="reset">CANCEL</button>
