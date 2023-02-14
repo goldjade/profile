@@ -11,6 +11,7 @@ import Content from './components/main/Content';
 // sub
 import Department from './components/sub/Department';
 import Community from './components/sub/Community';
+import Schedule from './components/sub/Schedule';
 import Gallery from './components/sub/Gallery';
 import Youtube from './components/sub/Youtube';
 import Location from './components/sub/Location';
@@ -32,10 +33,11 @@ function App() {
         {/* 중첩되는 header에 대한 처리가 필요하다. */}
         {/* 컴포넌트를 출력하는 3번째 방법*/}
         {/* <Header type={'sub'} /> */}
-        <Route path="/" render={()=><Header type={"sub"}/>} />
+        <Route path="/" render={() => <Header type={'sub'} />} />
       </Switch>
       <Route path="/department" component={Department} />
       <Route path="/community" component={Community} />
+      <Route path="/schedule" component={Schedule} />
       <Route path="/gallery" component={Gallery} />
       <Route path="/youtube" component={Youtube} />
       <Route path="/location" component={Location} />

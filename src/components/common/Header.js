@@ -1,13 +1,11 @@
-/** @format */
-
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink } from "react-router-dom";
 // FontAwsome 적용
 // https://fontawesome.com/v5/docs/web/use-with/react
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBars } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBars } from "@fortawesome/free-solid-svg-icons";
 
 const Header = (props) => {
-  const active = { color: 'hotpink' };
+  const active = { color: "hotpink" };
   return (
     <header className={props.type}>
       <div className="inner">
@@ -23,6 +21,11 @@ const Header = (props) => {
           <li>
             <NavLink activeStyle={active} to="/community">
               Community
+            </NavLink>
+          </li>
+          <li>
+            <NavLink activeStyle={active} to="/schedule">
+              Schedule
             </NavLink>
           </li>
           <li>
@@ -46,7 +49,7 @@ const Header = (props) => {
             </NavLink>
           </li>
         </ul>
-        <FontAwesomeIcon icon={faBars} className="fa-Bars"/>
+        <FontAwesomeIcon icon={faBars} className="fa-bars" />
       </div>
     </header>
   );
