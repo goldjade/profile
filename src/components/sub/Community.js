@@ -1,9 +1,18 @@
 /** @format */
-
+import { ResponsivePie } from '@nivo/pie';
 import React, { useEffect, useRef, useState } from 'react';
 import LayOut from '../common/LayOut';
 import CommunityCard from './CommunityCard';
-// import axios
+import axios from 'axios';
+
+// XSS 공격 방어 라이브러리
+// https://www.npmjs.com/package/dompurify
+import DOMPurify from 'dompurify';
+// npm i dompurify
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+// https://quilljs.com/
+// npm install react-quill
 
 // https://react-hook-form.com/
 // npm install react-hook-form
@@ -33,6 +42,9 @@ const Community = () => {
     register,
     handleSubmit,
     reset,
+    // 폼이 아니라 강제로 값을 세팅하는 메서드
+    setValue,
+    trigger,
     formState: { errors },
   } = useForm({
     resolver: yupResolver(schema), // yup 과 연결 시켜줌.
@@ -61,6 +73,8 @@ const Community = () => {
 
   const [Allowed, setAllowed] = useState(true);
   const createPost = (data) => {
+    console.log('submit으로 넘겨진 데이터');
+    console.log(data);
     // data ======>  { title: title, content: conten}
     setPosts([...posts, data]);
     // ...register("title")
@@ -154,21 +168,311 @@ const Community = () => {
 
       // 서버로 이미지를 임시로 보내고 url 글자를 받아오는 코드 / 일반적인 방법
       // 파일을 강제로 업로드 한다.
-      // const formData = new FormData();
-      // formData.append('files', uploadFile);
-      // await axios({
-      //   method: 'post',
-      //   url: '/api/files/images',
-      //   data: formData,
-      //   headers: {
-      //     'Content-Type': 'multipart/form-data',
-      //   },
-      // });
+      const formData = new FormData();
+      formData.append('files', uploadFile);
+      await axios({
+        method: 'post',
+        url: '/api/files/images',
+        data: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
     }
   };
+
+  // react-quill 관련
+
+  // reactQuill 에서 imag를 바로 서버로 저장하면 곤란
+  //teactquill  을 위해 image 핸들러를 만들어야함
+  // 먼저 이미지를 이미지 전용 서버에 보내고, 주소를 다시 돌려받아서 주소를 다시 Db 서버로 보낸다.
+  const quillRef = useRef(null);
+  const imageHandler = () => {
+    console.log('에디터에서 이미지 버튼을 클릭하면 이 핸들러가 작동');
+    // 1.이미지를 저장할 input type="file"을 생성한다
+    const input = document.createElement('input');
+    // 2.속성을 세팅한다
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    // 에디터 이미지 버튼을 클릭하면 input이 클릭되도록 한다
+    input.click();
+    // input 이 클릭되면 선택창이 나온다.
+    // input에 변화가 되면 이미지를 선택한 것이다.
+
+    input.addEventListener('change', async () => {
+      const file = input.files[0];
+      // 이미지를 변형한다
+      const formData = new FormData();
+      //formData의 형식은 키 - 벨류구조
+      formData.append('img', file);
+      //formData를 백엔드로 전송하고 주소를 받아온다.
+      try {
+        const result = await axios.post(
+          'http://localhost:3000/images',
+          formData
+        );
+        console.log('성공시, 백엔드가 보내주는 데이터', result.data.url);
+        // 명세서 확인 필요
+        const imgURL = result.data.url;
+        // ReactQuill Editer 에 html 수정해서 삽입
+        // useRef를 이용해서 해당 요소를 선택한다.
+        const editer = quillRef.current.getEditer();
+        // 현재 에디터 커서 위치값을 파악
+        const range = editer.getSelection();
+        //  가져온 이미지를 삽입해서 출력한다.
+        editer.insertEmbed(range.index, 'image', imgURL);
+      } catch (error) {
+        console.log('이미지 전송 실패');
+      }
+    });
+  };
+
+  // useMemo를 사용하지 않고 handler를 등록할 경우 타이핑 할때마다 focus가 벗어남
+  const modules = React.useMemo(
+    () => ({
+      toolbar: {
+        // container에 등록되는 순서대로 tool 배치
+        container: [
+          [{ font: [] }], // font 설정
+          [{ header: [1, 2, 3, 4, 5, 6, false] }], // header 설정
+          [
+            'bold',
+            'italic',
+            'underline',
+            'strike',
+            'blockquote',
+            'code-block',
+            'formula',
+          ], // 굵기, 기울기, 밑줄 등 부가 tool 설정
+          [
+            { list: 'ordered' },
+            { list: 'bullet' },
+            { indent: '-1' },
+            { indent: '+1' },
+          ], // 리스트, 인덴트 설정
+          ['link', 'image', 'video'], // 링크, 이미지, 비디오 업로드 설정
+          [{ align: [] }, { color: [] }, { background: [] }], // 정렬, 글씨 색깔, 글씨 배경색 설정
+          ['clean'], // toolbar 설정 초기화 설정
+        ],
+
+        // custom 핸들러 설정
+        handlers: {
+          image: imageHandler,
+          // 이미지 tool 사용에 대한 핸들러 설정
+          // image: imageHandler, // 이미지 tool 사용에 대한 핸들러 설정
+        },
+      },
+    }),
+    []
+  );
+  // toolbar에 사용되는 tool format
+  const formats = [
+    'font',
+    'header',
+    'bold',
+    'italic',
+    'underline',
+    'strike',
+    'blockquote',
+    'code-block',
+    'formula',
+    'list',
+    'bullet',
+    'indent',
+    'link',
+    'image',
+    'video',
+    'align',
+    'color',
+    'background',
+  ];
+
+  const handleChange = (value) => {
+    console.log(value);
+
+    // html 태그 출력 연습
+    // XSS 공격에 대한 처리  : dompurify
+    setTag(value);
+
+    //register 로 등록하지 않고, 강제로 넣어주는 기능
+    // 주의사항 : "<p><br></p>"  이 내용이 없는것
+    // -------  useForm 에 데이터를 넣고싶다.
+    setValue('contents', value === '<p><br></p>' ? '' : value);
+    // onChange가 됐는지 여부를 react-hook-form 에 알려준다
+    trigger('contents');
+    // -----useForm 때문에 필요함
+  };
+
+  const [tag, setTag] = useState('<p><b onClick={}>Hello</b></p>');
+
+  // 차트 데이터
+  const charData = [
+    {
+      id: 'lisp',
+      label: 'lisp',
+      value: 511,
+      color: 'hsl(174, 70%, 50%)',
+    },
+    {
+      id: 'erlang',
+      label: 'erlang',
+      value: 272,
+      color: 'hsl(357, 70%, 50%)',
+    },
+    {
+      id: 'c',
+      label: 'c',
+      value: 160,
+      color: 'hsl(154, 70%, 50%)',
+    },
+    {
+      id: 'ruby',
+      label: 'ruby',
+      value: 79,
+      color: 'hsl(230, 70%, 50%)',
+    },
+    {
+      id: 'javascript',
+      label: 'javascript',
+      value: 443,
+      color: 'hsl(45, 70%, 50%)',
+    },
+  ];
+
   return (
     <LayOut title={'Community'}>
+      {/* 차트출력 */}
+      <div style={{ width: '100%', height: 400 }}>
+        <ResponsivePie
+          data={charData}
+          margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
+          innerRadius={0.5}
+          padAngle={0.7}
+          cornerRadius={3}
+          activeOuterRadiusOffset={8}
+          borderWidth={1}
+          borderColor={{
+            from: 'color',
+            modifiers: [['darker', 0.2]],
+          }}
+          arcLinkLabelsSkipAngle={10}
+          arcLinkLabelsTextColor="#333333"
+          arcLinkLabelsThickness={2}
+          arcLinkLabelsColor={{ from: 'color' }}
+          arcLabelsSkipAngle={10}
+          arcLabelsTextColor={{
+            from: 'color',
+            modifiers: [['darker', 2]],
+          }}
+          defs={[
+            {
+              id: 'dots',
+              type: 'patternDots',
+              background: 'inherit',
+              color: 'rgba(255, 255, 255, 0.3)',
+              size: 4,
+              padding: 1,
+              stagger: true,
+            },
+            {
+              id: 'lines',
+              type: 'patternLines',
+              background: 'inherit',
+              color: 'rgba(255, 255, 255, 0.3)',
+              rotation: -45,
+              lineWidth: 6,
+              spacing: 10,
+            },
+          ]}
+          fill={[
+            {
+              match: {
+                id: 'ruby',
+              },
+              id: 'dots',
+            },
+            {
+              match: {
+                id: 'c',
+              },
+              id: 'dots',
+            },
+            {
+              match: {
+                id: 'go',
+              },
+              id: 'dots',
+            },
+            {
+              match: {
+                id: 'python',
+              },
+              id: 'dots',
+            },
+            {
+              match: {
+                id: 'scala',
+              },
+              id: 'lines',
+            },
+            {
+              match: {
+                id: 'lisp',
+              },
+              id: 'lines',
+            },
+            {
+              match: {
+                id: 'elixir',
+              },
+              id: 'lines',
+            },
+            {
+              match: {
+                id: 'javascript',
+              },
+              id: 'lines',
+            },
+          ]}
+          legends={[
+            {
+              anchor: 'bottom',
+              direction: 'row',
+              justify: false,
+              translateX: 0,
+              translateY: 56,
+              itemsSpacing: 0,
+              itemWidth: 100,
+              itemHeight: 18,
+              itemTextColor: '#999',
+              itemDirection: 'left-to-right',
+              itemOpacity: 1,
+              symbolSize: 18,
+              symbolShape: 'circle',
+              effects: [
+                {
+                  on: 'hover',
+                  style: {
+                    itemTextColor: '#000',
+                  },
+                },
+              ],
+            },
+          ]}
+        />
+      </div>
       {/* 입력폼 */}
+
+      {/* html tag 출력하기 */}
+      <div>{tag}</div>
+      {/* XSS 공격을 받을 수 있으므로 아래 구문은 비추천
+      예를 들어 사용자가html 을 입력하면 js 구문을 추가해서 정보취득 */}
+      {/* <div dangerouslySetInnerHTML={{ __html: tag }}></div> */}
+      <div
+        dangerouslySetInnerHTML={{
+          __html: DOMPurify.sanitize(String(tag)),
+        }}
+      ></div>
 
       <div className="inputBox">
         <form onSubmit={handleSubmit(createPost)}>
@@ -199,6 +503,17 @@ const Community = () => {
               onInput={onChangeImg}
               ref={imgRef}
             ></input>
+          </div>
+          {/* 위지윅에디터 react-Quill */}
+          <div>
+            <br />
+            <ReactQuill
+              ref={quillRef}
+              modules={modules}
+              formats={formats}
+              onChange={handleChange}
+            />
+            <br />
           </div>
           <div className="btnSet">
             {/* form 안쪽에 버튼은 type 을 정의한다. */}
